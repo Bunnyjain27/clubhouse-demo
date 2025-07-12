@@ -22,7 +22,6 @@
 
 import gi
 gi.require_version('GObject', '2.0')
-gi.require_version('Json', '1.0')
 
 import json
 import logging
@@ -33,9 +32,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 
-from gi.repository import GObject, Json
-from eosclubhouse import config, utils
-from eosclubhouse.utils import ClubhouseState
+from gi.repository import GObject
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +143,13 @@ class ClubhouseIdManager(GObject.GObject):
     
     def __init__(self, db_path: Optional[str] = None):
         super().__init__()
-        self.db_path = db_path or os.path.join(config.USER_DIR, 'clubhouse_ids.db')
+        if db_path is None:
+            # Use XDG_DATA_HOME or fallback to ~/.local/share
+            data_home = os.environ.get('XDG_DATA_HOME', os.path.expanduser('~/.local/share'))
+            clubhouse_data_dir = os.path.join(data_home, 'eos-clubhouse')
+            self.db_path = os.path.join(clubhouse_data_dir, 'clubhouse_ids.db')
+        else:
+            self.db_path = db_path
         self._ensure_db_exists()
         self._tokens_cache: Dict[str, ClubhouseIdToken] = {}
         self._relationships_cache: Dict[str, List[ClubhouseFollowRelationship]] = {}
